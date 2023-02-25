@@ -1,0 +1,44 @@
+@import "base";
+@import url("https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap");
+.header {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  font-family: roboto-slab;
+  padding: 2rem 3rem;
+  justify-content: flex-start;
+  background-color: $main-color;
+  color: #f5f5f5;
+  gap: 1rem;
+  width: 100%;
+
+  &__min-container {
+    font-family: "Yusei Magic";
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 1rem;
+    animation: fadeIn 1.5s;
+  }
+
+  &__text {
+    text-transform: capitalize;
+    font-size: 4rem;
+    font-weight: 600;
+  }
+
+  &__icon {
+    width: 5rem;
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      padding-left: 12rem;
+    }
+
+    100% {
+      opacity: 1;
+      padding-left: 0rem;
+    }
+  }
+}
