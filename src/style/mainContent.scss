@@ -82,10 +82,18 @@
     flex-flow: column nowrap;
     border-radius: 1rem;
     min-width: 50vw;
-    min-height: 50vh;
+    min-height: 60vh;
 
     @media (max-width: 550px) {
       width: 95vw;
+    }
+
+    @media (max-width: 1200px) {
+      width: 60vw;
+    }
+
+    @media (max-width: 800px) {
+      width: 80vw;
     }
   }
 
@@ -112,13 +120,17 @@
   &__left {
     display: flex;
     flex-flow: column nowrap;
-    padding: 2rem 2rem;
+    padding: 2rem;
     align-items: flex-start;
     justify-content: flex-start;
     background-color: $left-side;
     color: $font-color;
     gap: 1rem;
-    height: calc(50vh - 7rem);
+    height: calc(60vh - 7rem);
+
+    @media (max-width: 550px) {
+      padding: 1rem;
+    }
 
     &_item {
       display: flex;
@@ -126,7 +138,7 @@
       align-items: center;
       width: 13rem;
       gap: 1rem;
-      padding: 0.5rem 1.5rem;
+      padding: 0.5rem 1rem;
       font-size: 2rem;
       border-radius: 1rem;
       cursor: pointer;
