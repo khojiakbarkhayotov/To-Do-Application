@@ -37,14 +37,15 @@
     border-radius: 0.5rem;
     cursor: pointer;
     width: 20rem;
+
+    &:hover,
+    &_active {
+      background-color: $hover-back;
+    }
   }
 
   &__project {
     margin-left: 2rem;
-  }
-
-  &__item:hover {
-    background-color: $hover-back;
   }
 
   &__projects:hover {
@@ -84,16 +85,16 @@
     min-width: 50vw;
     min-height: 60vh;
 
-    @media (max-width: 550px) {
-      width: 95vw;
-    }
-
     @media (max-width: 1200px) {
       width: 60vw;
     }
 
     @media (max-width: 800px) {
       width: 80vw;
+    }
+
+    @media (max-width: 550px) {
+      width: 95vw;
     }
   }
 
@@ -299,4 +300,44 @@
       color: #fff;
     }
   }
+}
+
+// Right main content
+.right {
+  display: flex;
+  flex-flow: column nowrap;
+  padding: 3rem 4rem;
+  width: 100%;
+  overflow: auto;
+  justify-content: space-between;
+
+  @media (max-width: 1200px) {
+    padding: 4rem 5rem;
+  }
+
+  @media (max-width: 800px) {
+    padding: 3rem 4rem;
+  }
+
+  @media (max-width: 550px) {
+    padding: 2rem 3rem;
+  }
+
+  &__mainDiv {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 1rem;
+
+    &_title {
+      font-size: 3rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+  }
+}
+
+.todo_div {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
 }

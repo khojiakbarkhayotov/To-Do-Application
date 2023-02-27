@@ -20,12 +20,16 @@ if (!globalData) {
 export class ToDo {
   #container = document.createElement("div");
   #left = document.createElement("div");
+  #right = document.createElement("div");
+  #leftElemetns;
 
   constructor() {
     this.getInputForm;
     this.#container.classList.add("main");
+    this.#right.classList.add("right");
     // get data from localStorage
     this.#container.appendChild(this.leftContainer);
+    this.#container.appendChild(this.#right);
     return this.#container;
   }
 
@@ -104,10 +108,23 @@ export class ToDo {
     const items = [inbox, today, week, projectHeader, ...projects, notes];
     left.append(...items);
 
+    const fakeItems = [...items];
+    fakeItems.splice(3, 1);
+    this.#leftElemetns = fakeItems;
+    // initial load
+    this.rightContainer();
+    inbox.classList.add("left-container__item_active");
+
     const addBtn = document.createElement("img");
     addBtn.classList.add("add-todo");
     addBtn.src = addIcon;
     addBtn.addEventListener("click", this.addTodo.bind(ToDo));
+
+    this.#leftElemetns.forEach((item) => {
+      item.addEventListener("click", (event) => {
+        this.rightContainer(event);
+      });
+    });
 
     this.#left.appendChild(left);
     this.#left.appendChild(addBtn);
@@ -156,6 +173,7 @@ export class ToDo {
     title.placeholder = "Title";
     title.name = "title";
     title.classList.add("add-todo__main-input_title");
+    title.required = true;
 
     const details = document.createElement("textarea");
     details.placeholder = "Details";
@@ -183,6 +201,7 @@ export class ToDo {
     const dateInput = document.createElement("input");
     dateInput.name = "date";
     dateInput.type = "date";
+    dateInput.required = true;
 
     dueDate.append(dateLabel, dateInput);
 
@@ -327,12 +346,22 @@ export class ToDo {
       globalData.notes.push(data);
     } else if (size == 1) {
       // for project
-      globalData.projects.push(data);
-      const project = this.createLeftElements(data.title, "", true);
-      const projectsHeader = document.querySelector(
-        ".left-container__projects"
-      );
-      this.insertAfter(projectsHeader, project);
+      let reject = false;
+      globalData.projects.forEach((project) => {
+        if (data.title === project.title) {
+          alert("Project names must be unique!");
+          reject = true;
+        }
+      });
+
+      if (!reject) {
+        globalData.projects.push(data);
+        const project = this.createLeftElements(data.title, "", true);
+        const projectsHeader = document.querySelector(
+          ".left-container__projects"
+        );
+        this.insertAfter(projectsHeader, project);
+      }
     }
     overlay.classList.add("hidden");
     setLocalStorage(globalData);
@@ -342,5 +371,38 @@ export class ToDo {
     document.querySelector(".overlay").classList.remove("hidden");
   }
 
-  mainContent() {}
+  createTodo() {
+    const todo = document.createElement("div");
+    todo.classList.add("todo_div");
+  }
+
+  rightContainer(event = undefined) {
+    let content = "";
+    if (event) {
+      const leftItem = event.target.closest(".left-container__item");
+      content = leftItem.classList[0].split("__")[1];
+      leftItem.classList.add("left-container__item_active");
+      this.#leftElemetns.forEach((item) => {
+        if (leftItem != item) {
+          item.classList.remove("left-container__item_active");
+        }
+      });
+    }
+    const mainDiv = document.createElement("div");
+    mainDiv.classList.add("right__mainDiv");
+
+    const title = document.createElement("span");
+    title.classList.add("right__mainDiv_title");
+    if (content) {
+      title.textContent = content;
+    } else {
+      title.textContent = "Inbox";
+    }
+
+    this.#right.innerHTML = "";
+
+    mainDiv.append(title);
+
+    this.#right.append(mainDiv);
+  }
 }
