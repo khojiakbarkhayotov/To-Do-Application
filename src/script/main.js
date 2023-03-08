@@ -6,10 +6,18 @@ import projectIcon from "../assets/project.png";
 import projectHicon from "../assets/projectHeader.png";
 import noteIcon from "../assets/note.png";
 import addIcon from "../assets/add.png";
-import close from "../assets/close.svg";
+import closeIcon from "../assets/close.svg";
+import closeIconBlack from "../assets/closeBlack.svg";
 import todoIcon from "../assets/todo.svg";
+import deleteIcon from "../assets/delete.svg";
 import projectClose from "../assets/projectClose.png";
-import { setLocalStorage, getFromLocalStorage } from "./helper.js";
+import deleteHover from "../assets/deletehover.svg";
+import {
+  setLocalStorage,
+  getFromLocalStorage,
+  month,
+  monthNames,
+} from "./helper.js";
 
 let globalData = getFromLocalStorage();
 console.log(globalData);
@@ -21,7 +29,13 @@ export class ToDo {
   #container = document.createElement("div");
   #left = document.createElement("div");
   #right = document.createElement("div");
-  #leftElemetns;
+  #leftElements;
+  #add;
+  #green = "#22c55e";
+  #yellow = "#fbbf24";
+  #red = "#ef4444";
+  #overlay;
+  #newOverlay;
 
   constructor() {
     this.getInputForm;
@@ -30,6 +44,9 @@ export class ToDo {
     // get data from localStorage
     this.#container.appendChild(this.leftContainer);
     this.#container.appendChild(this.#right);
+    this.#newOverlay = this.#overlay.cloneNode(true);
+    document.body.append(this.#newOverlay);
+    this.#newOverlay.innerHTML = "";
     return this.#container;
   }
 
@@ -110,7 +127,7 @@ export class ToDo {
 
     const fakeItems = [...items];
     fakeItems.splice(3, 1);
-    this.#leftElemetns = fakeItems;
+    this.#leftElements = fakeItems;
     // initial load
     this.rightContainer();
     inbox.classList.add("left-container__item_active");
@@ -119,8 +136,9 @@ export class ToDo {
     addBtn.classList.add("add-todo");
     addBtn.src = addIcon;
     addBtn.addEventListener("click", this.addTodo.bind(ToDo));
+    this.#add = addBtn;
 
-    this.#leftElemetns.forEach((item) => {
+    this.#leftElements.forEach((item) => {
       item.addEventListener("click", (event) => {
         this.rightContainer(event);
       });
@@ -249,7 +267,7 @@ export class ToDo {
     const overlay = document.createElement("div");
     overlay.classList.add("overlay");
     overlay.classList.add("hidden");
-
+    this.#overlay = overlay;
     const form = document.createElement("div");
     form.classList.add("add-todo__form");
 
@@ -266,7 +284,7 @@ export class ToDo {
     headerText.textContent = "Create new...";
 
     const closeForm = document.createElement("img");
-    closeForm.src = close;
+    closeForm.src = closeIcon;
     closeForm.classList.add("add-todo__header_icon");
 
     header.append(headerText, closeForm);
@@ -340,9 +358,23 @@ export class ToDo {
     }
     const size = Object.entries(data).length;
     if (size == 4) {
+      // for usual todo
+      data.id = Date.now();
+      data.done = false;
+      const project = document.querySelector(".left-container__item_active");
+      if (project) {
+        const name = project.classList[0].split("__")[1];
+        data.project = name;
+      }
+      // handling UI
+      const todo = this.createTodo(data);
+      this.#right.querySelector(".right__mainDiv").append(todo);
       globalData.todos.push(data);
     }
     if (size == 2) {
+      data.id = Date.now();
+      const note = this.createNote(data);
+      this.#right.querySelector(".right__mainDiv").append(note);
       globalData.notes.push(data);
     } else if (size == 1) {
       // for project
@@ -360,6 +392,10 @@ export class ToDo {
         const projectsHeader = document.querySelector(
           ".left-container__projects"
         );
+        this.#leftElements.push(project);
+        project.addEventListener("click", (event) => {
+          this.rightContainer(event);
+        });
         this.insertAfter(projectsHeader, project);
       }
     }
@@ -371,9 +407,229 @@ export class ToDo {
     document.querySelector(".overlay").classList.remove("hidden");
   }
 
-  createTodo() {
+  generateDetails(title, text) {
+    const div = document.createElement("div");
+    div.classList.add("todo_div_details_item");
+
+    const titleDiv = document.createElement("span");
+    titleDiv.classList.add("todo_div_details_item_title");
+    titleDiv.innerHTML = title + ":";
+
+    const textSpan = document.createElement("span");
+    textSpan.classList.add("todo_div_details_item_text");
+    textSpan.innerHTML = text;
+
+    div.append(titleDiv, textSpan);
+
+    return div;
+  }
+
+  createTodo(data) {
+    const allTodos = globalData.todos;
     const todo = document.createElement("div");
     todo.classList.add("todo_div");
+
+    todo.setAttribute("data-id", data.id);
+
+    const left = document.createElement("div");
+    left.classList.add("todo_div_left");
+    left.innerHTML = `
+      <input id="${data.title}" type="checkbox" ${
+      data.done ? "checked" : ""
+    } name="r" value="2">
+      <label for="${data.title}">${data.title}</label>
+    `;
+
+    let color = this.#green;
+    if (data.priority == "medium") {
+      color = this.#yellow;
+    } else if (data.priority == "high") {
+      color = this.#red;
+    }
+
+    todo.style.borderLeft = `0.6rem solid ${color}`;
+
+    left.addEventListener("click", (e) => {
+      if (e.target.checked === true) {
+        data.done = true;
+      } else {
+        data.done = false;
+      }
+      left.setAttribute("checked", data.done);
+      allTodos.forEach((item, _, arr) => {
+        if (item == data) {
+          item.done = data.done;
+        }
+      });
+      setLocalStorage(globalData);
+    });
+
+    const right = document.createElement("div");
+    right.classList.add("todo_div_right");
+
+    const formatData = data.date.split("-");
+    let suffix = "th";
+    if (formatData[2] % 10 == 1) {
+      suffix = "st";
+    } else if (formatData[2] % 10 == 2) {
+      suffix = "nd";
+    } else if (formatData[2] % 10 == 3) {
+      suffix = "rd";
+    }
+    const date = `${month[formatData[1] - 1]} ${Number.parseInt(
+      formatData[2]
+    )}${suffix}`;
+
+    const details = document.createElement("button");
+    details.classList.add("todo_div_right_details");
+    details.textContent = "Details";
+
+    const dateElem = document.createElement("span");
+    dateElem.classList.add("todo_div_right_date");
+    dateElem.textContent = date;
+
+    const deleteElem = document.createElement("img");
+    deleteElem.classList.add("todo_div_right_delete");
+    deleteElem.src = deleteIcon;
+
+    deleteElem.addEventListener("mouseover", function (event) {
+      this.src = deleteHover;
+    });
+    deleteElem.addEventListener("mouseleave", (event) => {
+      deleteElem.src = deleteIcon;
+    });
+
+    deleteElem.addEventListener("click", (event) => {
+      const parent = event.target.closest(".todo_div");
+      const id = parent.dataset.id;
+      let itemToDel;
+      allTodos.forEach((item, index) => {
+        if (item.id == id) {
+          itemToDel = index;
+        }
+      });
+
+      allTodos.splice(itemToDel, 1);
+      setLocalStorage(globalData);
+      const grandParent = parent.closest(".right__mainDiv");
+      grandParent.removeChild(parent);
+    });
+
+    details.addEventListener("click", (event) => {
+      const parent = event.target.closest(".todo_div");
+      const id = parent.dataset.id;
+      let data;
+      allTodos.forEach((todo) => {
+        if (todo.id == id) {
+          data = todo;
+        }
+      });
+      const mainDiv = document.createElement("div");
+      mainDiv.classList.add("todo_div_detail");
+
+      const close = document.createElement("img");
+      close.src = closeIconBlack;
+      close.classList.add("todo_div_detail_close");
+
+      const div = document.createElement("div");
+      div.classList.add("todo_div_details");
+
+      const title = document.createElement("span");
+      title.classList.add("todo_div_details_title");
+      title.textContent = data.title;
+
+      const formatDate = `${monthNames[data.date.split("-")[1] - 1]} ${
+        date.split(" ")[1]
+      }, ${data.date.split("-")[0]}`;
+
+      const project = this.generateDetails("Project", data.project);
+      const priority = this.generateDetails("Priority", data.priority);
+      const dueDate = this.generateDetails("Due Date", formatDate);
+      const details = this.generateDetails("Details", data.details);
+
+      [this.#newOverlay, close].forEach((item) => {
+        item.addEventListener("click", (event) => {
+          if (event.target == this.#newOverlay || event.target == close) {
+            this.#newOverlay.classList.add("hidden");
+          }
+        });
+      });
+
+      div.append(title, project, priority, dueDate, details);
+
+      mainDiv.append(close, div);
+
+      this.#newOverlay.classList.remove("hidden");
+      this.#newOverlay.innerHTML = "";
+      this.#newOverlay.append(mainDiv);
+    });
+
+    right.append(details, dateElem, deleteElem);
+
+    todo.append(left, right);
+    return todo;
+  }
+
+  createNote(data) {
+    const mainDiv = document.createElement("div");
+    mainDiv.classList.add("note_div");
+    mainDiv.setAttribute("data-id", data.id);
+    mainDiv.title =
+      "In order to save edited note please enter Ctrl+S key combination";
+
+    const close = document.createElement("img");
+    close.src = closeIconBlack;
+    close.classList.add("todo_div_detail_close");
+
+    const div = document.createElement("div");
+    div.classList.add("note_div_details");
+
+    const title = document.createElement("span");
+    title.classList.add("note_div_details_title");
+    title.contentEditable = true;
+    title.textContent = data.title;
+
+    const details = document.createElement("span");
+    details.classList.add("note_div_details_text");
+    details.textContent = data.details;
+    details.contentEditable = true;
+
+    div.addEventListener("keydown", (event) => {
+      const current = event.target.closest(".note_div");
+      const id = current.dataset.id;
+      if ((event.ctrlKey && event.key == "s") || event.key == "#") {
+        const details = div.querySelector(".note_div_details_text").textContent;
+        const title = div.querySelector(".note_div_details_title").textContent;
+        event.preventDefault();
+        globalData.notes.forEach((note) => {
+          if (note.id == id) {
+            note.details = details;
+            note.title = title;
+          }
+        });
+        setLocalStorage(globalData);
+      }
+    });
+
+    close.addEventListener("click", (event) => {
+      const current = event.target.closest(".note_div");
+      const id = current.dataset.id;
+      const notes = globalData.notes;
+      let index;
+      notes.forEach((note, i) => {
+        if (note.id == id) {
+          index = i;
+        }
+      });
+
+      this.#right.querySelector(".right__mainDiv").removeChild(current);
+      notes.splice(index, 1);
+      setLocalStorage(globalData);
+    });
+
+    div.append(title, details);
+    mainDiv.append(close, div);
+    return mainDiv;
   }
 
   rightContainer(event = undefined) {
@@ -382,12 +638,26 @@ export class ToDo {
       const leftItem = event.target.closest(".left-container__item");
       content = leftItem.classList[0].split("__")[1];
       leftItem.classList.add("left-container__item_active");
-      this.#leftElemetns.forEach((item) => {
+      this.#leftElements.forEach((item) => {
         if (leftItem != item) {
           item.classList.remove("left-container__item_active");
         }
       });
     }
+
+    const date = new Date();
+    const day = `${date.getFullYear()}-${
+      (date.getMonth() + 1).toString().length == 1
+        ? "0" + (date.getMonth() + 1)
+        : date.getMonth() + 1
+    }-${
+      date.getDate().toString().length == 1
+        ? "0" + date.getDate()
+        : date.getDate()
+    }`;
+
+    const monday = date.getDate() - date.getDay();
+
     const mainDiv = document.createElement("div");
     mainDiv.classList.add("right__mainDiv");
 
@@ -402,7 +672,45 @@ export class ToDo {
     this.#right.innerHTML = "";
 
     mainDiv.append(title);
+    const todos = globalData.todos;
+    const current = event?.target.closest(".left-container__item");
+    const length = this.#leftElements.length;
+    let loop = true;
 
-    this.#right.append(mainDiv);
+    todos.forEach((todo) => {
+      if (current == this.#leftElements[0] || !event) {
+        mainDiv.append(this.createTodo(todo));
+      } else if (current == this.#leftElements[1]) {
+        if (todo.date == day) {
+          mainDiv.append(this.createTodo(todo));
+        }
+      } else if (current == this.#leftElements[2]) {
+        const day = Number.parseInt(todo.date.split("-")[2]);
+        for (let i = monday; i < monday + 7; i++) {
+          if (day == i) {
+            mainDiv.append(this.createTodo(todo));
+          }
+        }
+      } else if (current == this.#leftElements[length - 1]) {
+        if (loop) {
+          globalData.notes.forEach((note) => {
+            mainDiv.append(this.createNote(note));
+          });
+          loop = false;
+        }
+      } else {
+        const project = current.querySelector(
+          ".left-container__text"
+        ).textContent;
+        if (todo.project == project) {
+          mainDiv.append(this.createTodo(todo));
+        }
+      }
+    });
+
+    this.#right.appendChild(mainDiv);
+    if (this.#add && !this.#right.contains(this.#add) && innerWidth <= 600) {
+      this.#right.appendChild(this.#add);
+    }
   }
 }
