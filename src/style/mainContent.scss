@@ -526,6 +526,8 @@
   border-radius: 50%;
 }
 .todo_div_left input[type="checkbox"] {
+  border: none;
+  appearance: none;
   position: relative;
   height: 15px;
   width: 15px;
